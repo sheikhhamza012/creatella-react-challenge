@@ -13,6 +13,7 @@ export default class App extends React.Component {
     preemtive: [],
   };
   sort = (e) => {
+    //sort mechanism: this will immediately sort products in state when the selection changes
     if (e.target.value == "id") {
       this.state.products.sort((x, y) =>
         x[e.target.value].localeCompare(y[e.target.value])
@@ -20,15 +21,19 @@ export default class App extends React.Component {
     } else {
       this.state.products.sort((x, y) => x[e.target.value] - y[e.target.value]);
     }
+    //this will change the value products will sort to, so when the next request goes it will send current sorting parameter
     this.state.sort = e.target.value;
+    // will update the state as we are setting the state var manually
     this.forceUpdate();
   };
 
   onScroll = () => {
+    // this checks when the bottom is viewed and so trigger the load mechanism
     const wrappedElement = document.getElementById("root");
     if (wrappedElement.getBoundingClientRect().bottom <= window.innerHeight) {
       console.log("assaas");
       window.removeEventListener("scroll", this.onScroll);
+      //load mechanism is present in this lifecycle method
       this.componentDidMount();
     }
   };
@@ -37,20 +42,28 @@ export default class App extends React.Component {
     window.removeEventListener("scroll", this.onScroll, false);
   }
   componentDidMount = () => {
+    //pre emptive fetch is implemented in here
+
+    // when this function is called it will push the products from pre emptive array to products array
+
+    // when this method is initially called both arrays would be empty so they wont do any thing
     this.setState({
       isLoading: true,
       products: this.state.products.concat(this.state.preemtive),
     });
+    //this request is sent to fetch data only if there hasnt been a previous request with no data
     if (!this.state.isEmpty)
       Axios.get(
         `/api/products?_page=${this.state.page}&_limit=${20}&_sort=${
           this.state.sort
         }`
       ).then(({ data }) => {
+        //if request comes with no data set the empty flag so end of catalogue is shown and no more request is sent
         if (data.length == 0) {
           this.setState({ isEmpty: true, isLoading: false });
           return;
         }
+        // if this is the first request of the app then save the data directly to products and add scroll listener to window
         if (this.state.products.length <= 0) {
           this.setState(
             {
@@ -62,8 +75,12 @@ export default class App extends React.Component {
               window.addEventListener("scroll", this.onScroll);
             }
           );
+          //as this portion is run on first request of app send another request after populating products
+          //to populate pre emptive array
           this.componentDidMount();
         } else {
+          // if this isnt first request then just save comming data to preemptive everytime
+
           this.setState(
             {
               isLoading: false,
@@ -102,6 +119,8 @@ export default class App extends React.Component {
         {this.state.products.map((product, i) => (
           <>
             {i % 20 == 0 && i != 0 && (
+              //if this is the 20th map we need to show ad
+
               <div
                 style={{
                   display: "block",
@@ -117,6 +136,7 @@ export default class App extends React.Component {
                 />
               </div>
             )}
+            {/* every poduct component "grid"*/}
             <Product id={i} product={product} />
           </>
         ))}
